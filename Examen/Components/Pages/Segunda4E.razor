@@ -1,0 +1,163 @@
+﻿@page "/segunda4e"
+@rendermode InteractiveServer
+<h3>Registro de productos</h3>
+
+<!-- Campo: No. de inventario -->
+<div class="mb-3">
+    <label class="form-label">No. de inventario</label>
+    <input type="number" class="form-control" @bind="nuevoNoInventario" />
+</div>
+
+<!-- Campo: Descripción -->
+<div class="mb-3">
+    <label class="form-label">Descripción</label>
+    <input type="text" class="form-control" placeholder="Escribe la descripción del producto" @bind="nuevaDescripcion" />
+</div>
+
+<!-- Campo: Departamento -->
+<div class="mb-3">
+    <label class="form-label d-block">Departamento</label>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="depGroup" id="rFrutas" value="Frutas"
+               checked="@(nuevoDepartamento == "Frutas")"
+               @onchange='() => nuevoDepartamento = "Frutas"' />
+        <label class="form-check-label" for="rFrutas">Frutas</label>
+    </div>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="depGroup" id="rVerduras" value="Verduras"
+               checked="@(nuevoDepartamento == "Verduras")"
+               @onchange='() => nuevoDepartamento = "Verduras"' />
+        <label class="form-check-label" for="rVerduras">Verduras</label>
+    </div>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="depGroup" id="rLacteos" value="Lácteos"
+               checked="@(nuevoDepartamento == "Lácteos")"
+               @onchange='() => nuevoDepartamento = "Lácteos"' />
+        <label class="form-check-label" for="rLacteos">Lácteos</label>
+    </div>
+</div>
+
+<!-- Mensaje de error si el ID está repetido -->
+@if (!string.IsNullOrEmpty(mensajeError))
+{
+    <div class="alert alert-danger" role="alert">
+        @mensajeError
+    </div>
+}
+
+<!-- Botones de Acción -->
+<div class="mb-3">
+    <button type="button" class="btn btn-success me-2" @onclick="GuardarDatos">Guardar datos</button>
+    <button type="button" class="btn btn-success me-2" @onclick="VerListaCompleta">Lista completa</button>
+    <button type="button" class="btn btn-success me-2" @onclick='() => VerListaPorDepartamento("Frutas")'>Lista de frutas</button>
+    <button type="button" class="btn btn-success me-2" @onclick='() => VerListaPorDepartamento("Verduras")'>Lista de verduras</button>
+    <button type="button" class="btn btn-success me-2" @onclick='() => VerListaPorDepartamento("Lácteos")'>Lista de lácteos</button>
+</div>
+
+<!-- Tabla de Resultados -->
+@if (mostrarTabla)
+{
+    <table class="table table-striped table-hover mt-3">
+        <thead>
+            <tr>
+                <th>No. Inventario</th>
+                <th>Descripción</th>
+                <th>Departamento</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (listaAMostrar.Count == 0)
+            {
+                <tr>
+                    <td colspan="3" class="text-muted">No hay productos para mostrar en esta categoría.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var prod in listaAMostrar)
+                {
+                    <tr>
+                        <td>@prod.NoInventario</td>
+                        <td>@prod.Descripcion</td>
+                        <td>@prod.Departamento</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <button type="button" class="btn btn-success mt-2" @onclick="CerrarLista">Cerrar lista</button>
+}
+
+@code {
+    // Definición de la clase Producto
+    public class Producto
+    {
+        public int NoInventario { get; set; }
+        public string Descripcion { get; set; } = string.Empty;
+        public string Departamento { get; set; } = string.Empty;
+    }
+
+    // Lista global en memoria donde guardamos todos los datos
+    private static List<Producto> listaGeneral = new List<Producto>();
+
+    // Lista auxiliar para mostrar en la tabla de la pantalla
+    private List<Producto> listaAMostrar = new List<Producto>();
+
+    // Variables vinculadas a los campos del formulario
+    private int nuevoNoInventario = 0;
+    private string nuevaDescripcion = string.Empty;
+    private string nuevoDepartamento = "Frutas";
+
+    // Variables de control visual
+    private bool mostrarTabla = false;
+    private string mensajeError = string.Empty;
+
+    // 1. GUARDAR DATOS EN MEMORIA
+    private void GuardarDatos()
+    {
+        mensajeError = string.Empty;
+
+        // Validar restricción: Número de inventario único
+        if (listaGeneral.Any(p => p.NoInventario == nuevoNoInventario))
+        {
+            mensajeError = $"El número de inventario {nuevoNoInventario} ya existe. Debe ser único.";
+            return;
+        }
+
+        // Agregar el registro a la memoria principal
+        listaGeneral.Add(new Producto
+        {
+            NoInventario = nuevoNoInventario,
+            Descripcion = nuevaDescripcion,
+            Departamento = nuevoDepartamento
+        });
+
+        // Limpiar los campos de entrada
+        nuevoNoInventario = 0;
+        nuevaDescripcion = string.Empty;
+        nuevoDepartamento = "Frutas";
+    }
+
+    // 2. MOSTRAR LISTA COMPLETA
+    private void VerListaCompleta()
+    {
+        listaAMostrar = listaGeneral.ToList();
+        mostrarTabla = true;
+    }
+
+    // 3. MOSTRAR LISTA FILTRADA POR DEPARTAMENTO
+    private void VerListaPorDepartamento(string dep)
+    {
+        listaAMostrar = listaGeneral
+            .Where(p => p.Departamento.Equals(dep, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        mostrarTabla = true;
+    }
+
+    // 4. CERRAR Y OCULTAR LA TABLA
+    private void CerrarLista()
+    {
+        mostrarTabla = false;
+    }
+}
